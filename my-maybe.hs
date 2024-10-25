@@ -55,9 +55,9 @@ w''' :: MyMaybe Int
 w''' = (*) !$! a !*! b
 
 class MyMonad m where
-  (!>>=!)  :: m a -> (  a -> m b) -> m b
-  (!>>!)   :: m a ->  m b         -> m b
-  return ::   a                 -> m a
+  (!>>=!) :: m a -> (a -> m b) -> m b
+  (!>>!) :: m a -> m b -> m b
+  return :: a -> m a
 
 instance MyMonad MyMaybe where
   (!>>=!) :: MyMaybe a -> (a -> MyMaybe b) -> MyMaybe b
