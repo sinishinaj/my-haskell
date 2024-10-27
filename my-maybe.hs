@@ -1,4 +1,6 @@
+import Control.Monad.IO.Class
 import Data.Kind (Type)
+import Control.Applicative.Lift (Lift(Pure))
 
 class MyFunctor (f :: Type -> Type) where
   myFmap :: (a -> b) -> f a -> f b
@@ -56,18 +58,62 @@ w''' = (*) !$! a !*! b
 
 class MyMonad m where
   (!>>=!) :: m a -> (a -> m b) -> m b
-  (!>>!) :: m a -> m b -> m b
-  return :: a -> m a
+  -- (!>>!) :: m a -> m b -> m b
+  myReturn :: a -> m a
 
 instance MyMonad MyMaybe where
   (!>>=!) :: MyMaybe a -> (a -> MyMaybe b) -> MyMaybe b
   (!>>=!) MyNothing _ = MyNothing
   (!>>=!) (MyJust x) func = func x
-  return :: a -> MyMaybe a
-  return = myPure
+  myReturn :: a -> MyMaybe a
+  myReturn = myPure
+
+class MySemigroup a where
+  (!<>!) :: a -> a -> a
+
+class MySemigroup a => MyMonoid a where
+  myMempty :: a 
 
 newtype AdditionInt = AdditionInt Int
   deriving (Show, Eq)
 
-instance Semigroup AdditionInt where
-  AdditionInt x <> AdditionInt y = AdditionInt (x + y)
+instance MySemigroup AdditionInt where
+  (!<>!) :: AdditionInt -> AdditionInt -> AdditionInt
+  AdditionInt x !<>! AdditionInt y = AdditionInt (x + y)
+
+g :: (MySemigroup a, Num a) => a -> a
+g n = myMempty !<>! n
+
+d :: MyMaybe Int
+d = myPure 2
+
+e :: Int -> MyMaybe Int
+e n = (n+) !$! MyJust 3
+
+r :: MyMaybe Int
+r = d !>>=! e
+
+f :: Int -> MyMaybe Int
+f n = MyNothing
+
+r' :: MyMaybe Int
+r' = (d !>>=! f) !>>=! e !>>=! e
+
+d' :: Maybe Int
+d' = pure 2
+
+e' :: Int -> Maybe Int
+e' n = (n+) <$> Just 3
+
+f' :: Int -> Maybe Int
+f' n = Nothing
+
+r'' :: Int -> Maybe Int
+r'' n = (pure n >>= f') >>= e' >>= e'
+
+r''' :: Int -> Maybe Int
+r''' n = do
+  x <- e' n
+  y <- e' x
+  z <- e' y
+  return z
